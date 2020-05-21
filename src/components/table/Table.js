@@ -18,22 +18,42 @@ export class Table extends ExcelComponent {
 
   onMousedown( event ) {
     const target = $( event.target )
-    const isCol = target.data.resize === 'col'
-    const startPosition = isCol ? target.coord.right : target.coord.bottom
-    const parent = isCol
-      ? target.closest( '[data-excel-type="col"]' )
-      : target.closest( '[data-excel-type="row"]' )
 
     if ( 'resize' in target.data ) {
+      const isCol = target.data.resize === 'col'
+      const parent = isCol
+        ? target.closest( '[data-excel-type="col"]' )
+        : target.closest( '[data-excel-type="row"]' )
+
+      const cellsCol = isCol
+        ? this.$root.$el.querySelectorAll(
+          `[data-col-number="${parent.data.colNumber}"]`
+        )
+        : null
       target.$el.style.opacity = 1
 
+      let startTime = new Date()
+      console.log( startTime )
+
       document.onmousemove = e => {
+        if ( new Date() - startTime < 200 ) {
+          return
+        }
+        // console.log( new Date() - startTime )
+        startTime = new Date()
+
         if ( isCol ) {
-          const delta = e.clientX - startPosition
-          target.$el.style.right = -delta + 'px'
+          const delta = e.clientX - parent.coord.right
+          parent.$el.style.width = parent.$el.offsetWidth + delta + 'px'
+
+          console.log( 'move' )
+
+          cellsCol.forEach( $cell => {
+            $cell.style.width = parent.$el.style.width
+          } )
         } else {
-          const delta = e.clientY - startPosition
-          target.$el.style.bottom = -delta + 'px'
+          const delta = e.clientY - parent.coord.bottom
+          parent.$el.style.height = parent.$el.offsetHeight + delta + 'px'
         }
       }
 
@@ -44,18 +64,15 @@ export class Table extends ExcelComponent {
         target.$el.style.removeProperty( 'opacity' )
 
         if ( isCol ) {
-          const delta = e.clientX - startPosition
+          const delta = e.clientX - parent.coord.right
           target.$el.style.right = 0
           parent.$el.style.width = parent.$el.offsetWidth + delta + 'px'
 
-          this.$root.$el.querySelectorAll(
-            `[data-col-number="${parent.data.colNumber}"]`
-          )
-            .forEach( $cell => {
-              $cell.style.width = parent.$el.style.width
-            } )
+          cellsCol.forEach( $cell => {
+            $cell.style.width = parent.$el.style.width
+          } )
         } else {
-          const delta = e.clientY - startPosition
+          const delta = e.clientY - parent.coord.bottom
           target.$el.style.bottom = 0
           parent.$el.style.height = parent.$el.offsetHeight + delta + 'px'
         }
@@ -63,4 +80,3 @@ export class Table extends ExcelComponent {
     }
   }
 }
-
