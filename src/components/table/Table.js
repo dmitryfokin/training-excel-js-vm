@@ -1,14 +1,13 @@
 import {ExcelComponent} from '@core/ExcelComponent'
 import {createTable} from '@/components/table/table.template'
+import {$} from '@core/dom'
 
 export class Table extends ExcelComponent {
   constructor( $root ) {
     super( $root, {
       name: 'Table',
-      listeners: ['mousedown', 'mouseup'],
+      listeners: ['mousedown'],
     } )
-
-    this.onMousemove = this.onMousemove.bind( this )
   }
 
   static className = 'excel__table'
@@ -18,58 +17,50 @@ export class Table extends ExcelComponent {
   }
 
   onMousedown( event ) {
-    event.stopPropagation()
-    event.preventDefault()
-    if ( 'resize' in event.target.dataset ) {
-      event.target.style.opacity = 1
-      const resizeCol = event.target.dataset.resize === 'col'
-      this.resizeSettings = {
-        resizeCol: resizeCol,
-        mouseStart: resizeCol ? event.clientX : event.clientY,
-        $el: event.target,
+    const target = $( event.target )
+    const isCol = target.data.resize === 'col'
+    const startPosition = isCol ? target.coord.right : target.coord.bottom
+    const parent = isCol
+      ? target.closest( '[data-excel-type="col"]' )
+      : target.closest( '[data-excel-type="row"]' )
+
+    if ( 'resize' in target.data ) {
+      target.$el.style.opacity = 1
+
+      document.onmousemove = e => {
+        if ( isCol ) {
+          const delta = e.clientX - startPosition
+          target.$el.style.right = -delta + 'px'
+        } else {
+          const delta = e.clientY - startPosition
+          target.$el.style.bottom = -delta + 'px'
+        }
       }
-      this.$root.on( 'mousemove', this.onMousemove )
+
+      document.onmouseup = e => {
+        document.onmousemove = null
+        document.onmouseup = null
+
+        target.$el.style.removeProperty( 'opacity' )
+
+        if ( isCol ) {
+          const delta = e.clientX - startPosition
+          target.$el.style.right = 0
+          parent.$el.style.width = parent.$el.offsetWidth + delta + 'px'
+
+          this.$root.$el.querySelectorAll(
+            `[data-col-number="${parent.data.colNumber}"]`
+          )
+            .forEach( $cell => {
+              $cell.style.width = parent.$el.style.width
+            } )
+        } else {
+          const delta = e.clientY - startPosition
+          target.$el.style.bottom = 0
+          parent.$el.style.height = parent.$el.offsetHeight + delta + 'px'
+        }
+      }
     }
-  }
-
-  onMouseup( event ) {
-    event.stopPropagation()
-    event.preventDefault()
-
-    if ( this.resizeSettings ) {
-      this.$root.off( 'mousemove', this.onMousemove )
-      this.resizeSettings.resizeTable = true
-      this.resizeSettings.$el.style.removeProperty( 'opacity' )
-      resizing( this.resizeSettings, event )
-      this.resizeSettings = null
-    }
-  }
-
-  onMousemove( event ) {
-    event.stopPropagation()
-    event.preventDefault()
-
-    resizing( this.resizeSettings, event )
   }
 }
 
-function resizing( resizeSettings, event ) {
-  const resizeCol = resizeSettings.resizeCol
-  const xy = resizeCol ? event.clientX : event.clientY
-
-  if ( resizeSettings.resizeTable ) {
-    const $elParent = resizeCol
-      ? resizeSettings.$el.closest( '[data-excel-type="col"]' )
-      : resizeSettings.$el.closest( '[data-excel-type="row"]' )
-    const heightStart = resizeCol
-      ? $elParent.offsetWidth
-      : $elParent.offsetHeight
-    $elParent.style[resizeCol ? 'width' : 'height'] =
-      (+heightStart + xy - resizeSettings.mouseStart) + 'px'
-
-    resizeSettings.$el.style[resizeCol ? 'right' : 'bottom'] = 0
-  } else {
-    resizeSettings.$el.style[resizeCol ? 'right' : 'bottom'] =
-      (resizeSettings.mouseStart - xy) + 'px'
-  }
-}
