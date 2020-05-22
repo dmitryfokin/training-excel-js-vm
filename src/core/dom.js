@@ -38,6 +38,19 @@ class Dom {
     return this.$el.getBoundingClientRect()
   }
 
+  findAll( selector ) {
+    const arr = []
+    this.$el.querySelectorAll( selector )
+      .forEach( $el => arr.push( $( $el ) ) )
+    return arr
+  }
+
+  css( styles = {} ) {
+    Object.keys( styles ).forEach( nameStyle => {
+      this.$el.style[nameStyle] = styles[nameStyle]
+    } )
+  }
+
   append( node ) {
     const $node = node instanceof Dom
       ? node.$el
