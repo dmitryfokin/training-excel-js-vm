@@ -2,27 +2,46 @@ import {numberToLiteralColumn} from '@core/utils'
 
 function getRow( rowInfo, rowData ) {
   return `
-    <div class="row">
-      <div class="row-info">${rowInfo || ''}</div>
+    <div class="row" data-row-number="${rowInfo || 0}" data-excel-type="row">
+      <div class="row-info">
+        ${rowInfo || ''}
+        ${rowInfo
+    ? `<div class="row-resize" data-resize="row"></div>`
+    : ''}
+       </div>
       <div class="row-data">${rowData}</div>
-    </div>&gt;&lt; 
+    </div> 
   `
 }
 
 function getCol( _, i ) {
-  return `<div class="column">${numberToLiteralColumn( i + 1 )}</div>`
+  return `
+    <div class="column" data-col-number="${i + 1}"  data-excel-type="col">
+      ${numberToLiteralColumn( i + 1 )}
+      <div class="col-resize" data-resize="col"></div>
+    </div>`
 }
 
-function getCell() {
-  return `<div class="cell" contenteditable = ""></div>`
+function getCell( _, i ) {
+  return `
+    <div 
+      class="cell" 
+      contenteditable = "" 
+      data-col-number="${i + 1}" 
+      data-excel-type="cell"
+    ></div>
+  `
 }
 
-export function createTable( rowsCount = 15, columsCount = 28 ) {
-  const htmlColumns = new Array( columsCount )
+export function createTable(
+  rowsCount = 15,
+  colsCount = 28
+) {
+  const htmlColumns = new Array( colsCount )
     .fill( '' )
     .map( getCol )
     .join( '' )
-  const htmlCells = new Array( columsCount )
+  const htmlCells = new Array( colsCount )
     .fill( '' )
     .map( getCell )
     .join( '' )
