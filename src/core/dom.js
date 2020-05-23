@@ -45,10 +45,22 @@ class Dom {
     return arr
   }
 
+  find( selector ) {
+    return $( this.$el.querySelector( selector ) )
+  }
+
   css( styles = {} ) {
     Object.keys( styles ).forEach( nameStyle => {
       this.$el.style[nameStyle] = styles[nameStyle]
     } )
+  }
+
+  addClass( className ) {
+    this.$el.classList.add( className )
+  }
+
+  removeClass( className ) {
+    this.$el.classList.remove( className )
   }
 
   append( node ) {
