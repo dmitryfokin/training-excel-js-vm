@@ -22,15 +22,20 @@ function getCol( _, i ) {
     </div>`
 }
 
-function getCell( _, i ) {
-  return `
+
+function getCell( rowNumber ) {
+  return function( _, colNumber ) {
+    return `
     <div 
       class="cell" 
       contenteditable = "" 
-      data-col-number="${i + 1}" 
+      data-col-number="${colNumber + 1}" 
+      data-row-number="${rowNumber}" 
+      data-cell-id="${rowNumber}:${colNumber + 1}" 
       data-excel-type="cell"
     ></div>
   `
+  }
 }
 
 export function createTable(
@@ -41,14 +46,15 @@ export function createTable(
     .fill( '' )
     .map( getCol )
     .join( '' )
-  const htmlCells = new Array( colsCount )
-    .fill( '' )
-    .map( getCell )
-    .join( '' )
 
   const arrRow = [getRow( null, htmlColumns )]
-  for ( let i = 1; i <= rowsCount; i++ ) {
-    arrRow.push( getRow( i, htmlCells ) )
+  for ( let rowNumber = 1; rowNumber <= rowsCount; rowNumber++ ) {
+    const htmlCells = new Array( colsCount )
+      .fill( '' )
+      .map( getCell( rowNumber ) )
+      .join( '' )
+
+    arrRow.push( getRow( rowNumber, htmlCells ) )
   }
 
   return arrRow.join( '' )
