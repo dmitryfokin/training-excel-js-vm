@@ -1,22 +1,33 @@
 import {cellXY} from '@/components/table/table.function'
+import {$} from '@core/dom'
 
 export class TableSelected {
   static className = 'selected'
 
-  constructor( $root ) {
+  static keyArr = [
+    'ArrowUp',
+    'ArrowRight',
+    'ArrowDown',
+    'ArrowLeft',
+    'Enter',
+    'Tab',
+  ]
+
+  constructor( $root, emmiter ) {
     this.$root = $root
     this.cellsSelected = []
     this.cellsSelectedGroup = []
     this.cellsSelectedGroupFix = [] // копия перед выделением
     this.lastSelectedGroupFirstCell = null
+    this.emmiter = emmiter
   }
 
   select( $el ) {
     this.cell = $el
+    this.emmiter.$emit( 'selected:cell', $el )
     this.clearSelected()
     this.cellsSelected.push( $el )
     $el.addClass( TableSelected.className )
-    console.log( this.cellsSelected )
   }
 
   selectGroupCtrl( $el ) {
@@ -32,15 +43,17 @@ export class TableSelected {
       this.cellsSelectedGroupFix = [...this.cellsSelected]
     }
 
+    this.cellsSelected = [...this.cellsSelectedGroupFix]
     // удалить все selected, в последнем выделении
     this.cellsSelectedGroup.forEach( $elClear => {
-      console.log( this.cellsSelectedGroupFix )
-      console.log( this.cellsSelectedGroupFix.includes( $elClear ) )
-      console.log( $elClear )
-      if ( !this.cellsSelectedGroupFix.includes( $elClear ) ) {
+      if (
+        this.cellsSelectedGroupFix
+          .findIndex( $elFix => $elFix.$el === $elClear.$el ) === -1
+      ) {
         $elClear.removeClass( TableSelected.className )
       }
-    } )
+    }, this )
+    this.cellsSelectedGroup = []
 
     const cellCoordFirst = cellXY( this.cell )
     const cellCoordLast = cellXY( $el )
@@ -81,10 +94,48 @@ export class TableSelected {
     }
   }
 
+  onKeydown( event ) {
+    const $el = $( event.target )
+    const {key, shiftKey} = event
+    if ( key === 'Enter' && shiftKey ) {
+      return
+    }
+    if ( key === 'Enter' || key === 'Tab' ) {
+      event.preventDefault()
+    }
+
+    const cellCoord = cellXY( $el )
+    let {rowNumber, colNumber} = cellCoord
+
+    if ( key === 'ArrowUp' ) {
+      rowNumber = rowNumber === 1 ? 1 : rowNumber - 1
+    } else if ( key === 'ArrowRight' || key === 'Tab' ) {
+      colNumber++
+    } else if ( key === 'ArrowDown' || key === 'Enter' ) {
+      rowNumber++
+    } else if ( key === 'ArrowLeft' ) {
+      colNumber = colNumber === 1 ? 1 : colNumber - 1
+    }
+
+    if ( rowNumber === cellCoord.rowNumber
+      && colNumber === cellCoord.colNumber ) {
+      return
+    }
+
+    const $elNew = this.$root.find(
+      `[data-cell-id="${rowNumber}:${colNumber}"]`
+    )
+    this.select( $elNew )
+    $elNew.focus()
+  }
+
   clearSelected() {
     this.cellsSelected.forEach(
       $el => $el.removeClass( TableSelected.className )
     )
     this.cellsSelected = []
+    this.cellsSelectedGroup = []
+    this.cellsSelectedGroupFix = []
+    this.lastSelectedGroupFirstCell = null
   }
 }

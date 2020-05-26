@@ -20,10 +20,12 @@ class Dom {
 
   on( eventType, callback ) {
     this.$el.addEventListener( eventType, callback )
+    return this
   }
 
   off( eventType, callback ) {
     this.$el.removeEventListener( eventType, callback )
+    return this
   }
 
   get data() {
@@ -53,14 +55,34 @@ class Dom {
     Object.keys( styles ).forEach( nameStyle => {
       this.$el.style[nameStyle] = styles[nameStyle]
     } )
+    return this
+  }
+
+  text( text ) {
+    if ( typeof text === 'string' ) {
+      this.$el.textContent = text.trim()
+      return this
+    }
+    if ( this.$el.tagName.toLowerCase() === 'input' ) {
+      return this.$el.value.trim()
+    }
+
+    return this.$el.textContent.trim()
+  }
+
+  focus() {
+    this.$el.focus()
+    return this
   }
 
   addClass( className ) {
     this.$el.classList.add( className )
+    return this
   }
 
   removeClass( className ) {
     this.$el.classList.remove( className )
+    return this
   }
 
   append( node ) {
